@@ -4,46 +4,47 @@
 
 require 'rubygems'
 require 'bundler/setup'
-require 'active_support'
 require 'yaml'
 $LOAD_PATH.unshift File.expand_path(File.dirname(__FILE__) + '/../lib')
 require 'ib-ruby'
-
-# Definition of what we want data for.  We have to keep track of what ticker id
-# corresponds to what symbol ourselves, because the ticks don't include any other
-# identifying information. The choice of ticker ids is, as far as I can tell, arbitrary.
-contracts = {123 => IB::Stock.new( symbol:'T' ),
-	     #	     ---------------------------------------------------------------- change to a valid expiry 
-	     456 => IB::Future.new( symbol:'ES', exchange: 'GLOBEX' , expiry:'201512', :multiplier => 50),
-	     789 => IB::Forex.new( :symbol => 'EUR', :currency  =>'USD'),
-	     56 => IB::Stock.new( symbol:'TAP')
-# No historical data for GBP/CASH@IDEALPRO
-}
-print_ohlc = ->(obj) do
-  print obj.time  + " >>  "+
-    "%8.3f \t" % obj.open +
-    "%8.3f \t" % obj.high + 
-    "%8.3f \t" % obj.low  +
-    "%8.3f \t||" % obj.close +
-    "%8d \n" % obj.volume 
-end
-print_ohlc_title = -> do 
-  print " ##  "+ "%8s  \t" % "open" + 
-    "%8s  \t" % "high" +
-    "%8s  \t" % "low" +
-    "%8s  \t||" % "close" +
-    "%8s  \n" % "volume" 
-  puts "-"*100
-end
-
-responded = []
 # Connect to IB TWS.
 # It is safe to connect to a production-machine. 
-#                            change host to ip of the computer, where a tws
+#                            change host to ip of the computer, where a tws (or gateway)
 #                            with marketdata-subscriptions is running
-IB::Gateway.new  connect: true ,  client_id: 1289 , host: 'beta:7496' # TWS
+gw = IB::Gateway.new  connect: true ,  client_id: 1289 ,  host: 'beta:7496', # or 'localhost'
+		      logger: Logger.new("/dev/null")  # we are not interested in logging messages
 
 if ( ib= IB::Gateway.tws).present? 
+
+  # Definition of what we want data for.  
+  EXPIRY =  '201506'
+  [ IB::Stock.new( symbol:'T' ),
+    IB::Future.new( symbol:'ES', exchange: 'GLOBEX' , expiry:EXPIRY, :multiplier => 50),
+    IB::Forex.new( :symbol => 'AUD', :currency  =>'USD')
+  ].each do |x| 
+    x.verify do |contract| 
+      gw.advisor.contracts.update_or_create  contract, :con_id
+      puts "Added verified Contract #{contract.to_human} to Advisor#Contracts"
+    end
+  end
+  print_ohlc = ->(obj) do
+    print obj.time  + " >>  "+
+      "%8.3f \t" % obj.open +
+      "%8.3f \t" % obj.high + 
+      "%8.3f \t" % obj.low  +
+      "%8.3f \t||" % obj.close +
+      "%8d \n" % obj.volume 
+  end
+  print_ohlc_title = -> do 
+    print " ##  "+ "%8s  \t" % "open" + 
+      "%8s  \t" % "high" +
+      "%8s  \t" % "low" +
+      "%8s  \t||" % "close" +
+      "%8s  \n" % "volume" 
+    puts "-"*100
+  end
+
+  responded = []
 
 
   # Subscribe to Alerts and HistoricalData incoming events.  The code passed in the block
@@ -53,10 +54,11 @@ if ( ib= IB::Gateway.tws).present?
   # Note that we have to look the ticker id of each incoming message
   # up in local memory to figure out what it's for.
   ib.subscribe( IB::Messages::Incoming::HistoricalData ) do |msg|
+    contract = gw.advisor.contracts.detect{|y| y.con_id == msg.request_id }
     case msg
     when IB::Messages::Incoming::HistoricalData
       puts "-"*100
-      print "%8s" % contracts[msg.request_id].local_symbol + ": #{msg.count} items"
+      print "%8s" % contract.local_symbol + ": #{msg.count} items"
       print_ohlc_title[]
       msg.results.each { |entry|  print_ohlc[entry] }
       responded[msg.request_id] =  1
@@ -68,14 +70,10 @@ if ( ib= IB::Gateway.tws).present?
 
   # Now we actually request historical data for the symbols we're interested in. TWS will
   # respond with a HistoricalDa#ta message, which will be processed by the code above.
-  contracts.each_pair do | request_id, contract |
-    # first: verify the contracts. Perform the query for historical data 
-    # only if the attributes yield a valid IB::Contract 
-     puts request_id
-    contract.verify  do | contract |
+  gw.advisor.contracts.each do | contract |
 
     IB::Gateway.current.send_message IB::Messages::Outgoing::RequestHistoricalData.new(
-      :request_id => request_id,
+      :request_id => contract.con_id,
       :contract => contract,
       :end_date_time => Time.now.to_ib,
       :duration => '3 D', #    ?
@@ -84,15 +82,14 @@ if ( ib= IB::Gateway.tws).present?
       :use_rth => 1,
       :format_date => 1)
   end
-  end
 
   # IB does not send any indication when all historic data is done being delivered.
   # So we need to interrupt manually when our request is answered.
   #puts "\n******** Press <Enter> to exit... *********\n\n"
   #STDIN.gets
   # or
-  sleep(0.2) while responded.length < contracts.length
-  IB::Gateway.current.disconnect
+  sleep(0.2) while responded.length < gw.advisor.contracts.length
+  gw.disconnect
 
 else
   puts "No TWS"
