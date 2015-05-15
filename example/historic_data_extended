@@ -5,12 +5,12 @@
 
 require 'rubygems'
 require 'bundler/setup'
-require 'active_support'
 require 'yaml'
 $LOAD_PATH.unshift File.expand_path(File.dirname(__FILE__) + '/../lib')
 require 'ib-ruby'
 
 TWS= 'beta:7496' # or 'localhost'  
+EXPIRY = '201509'
 print_ohlc = ->(obj) do
   print obj.time  + " >>  "+
     "%8.3f \t" % obj.open +
@@ -28,13 +28,15 @@ print_ohlc_title = -> do
   puts "-"*100
 end
 # Connect to IB TWS.
-IB::Gateway.new host: TWS , connect:true, client_id: 1343
-if ( ib = IB::Gateway.tws).present?
+gw= IB::Gateway.new host: TWS , connect:true, client_id: 1343
+if ( ib = gw.tws).present?
 
   # define the contracts and assign them to the advisor
-  IB::Gateway.current.advisor.contracts  <<   IB::Stock.new( symbol:'T' )
-  IB::Gateway.current.advisor.contracts  <<   IB::Future.new( symbol:'ES', exchange: 'GLOBEX' ,
-							     expiry:'201512', :multiplier => 50)
+  [IB::Stock.new( symbol:'T' ),
+   IB::Future.new( symbol:'ES', exchange: 'GLOBEX' ,
+							     expiry: EXPIRY , :multiplier => 50) ].each do |c|
+    c.verify{| contract |    gw.advisor.contracts.update_or_create contract, :con_id }
+  end
   # ---------------------------------------------------------------- change to a valid expiry 
   #               IB::Forex.new( :symbol => 'AUD', :currency  =>'USD') =>[]
   # No historical data for GBP/CASH@IDEALPRO
@@ -44,32 +46,32 @@ if ( ib = IB::Gateway.tws).present?
   # Subscribe to HistoricalData incoming events.  The code passed in the block
   # will be executed when a message of that type is received, with the received
   # message as its argument. In this case, we just print out the data.
-  #
-  # Note that we have to look the ticker id of each incoming message
-  # up in local memory to figure out what it's for.
-  ib.subscribe(IB::Messages::Incoming::HistoricalData) do |msg|
-  puts  IB::Gateway.current.advisor.contracts.find{|x| x.con_id == msg.request_id}.local_symbol + ": #{msg.count} items:" 
-    msg.results.each { |entry| print_ohlc[entry] }
+
+   ib.subscribe(IB::Messages::Incoming::HistoricalData) do |msg|
+     con_id,data_type =  msg.request_id.divmod(10)
+     puts "\n"+ IB::Gateway.current.advisor.contracts.find{|x| x.con_id == con_id}.local_symbol + " ## "  + IB::DATA_TYPES.values[data_type].to_s +  ": #{msg.count} items:" 
+     msg.results.each { |entry|  print_ohlc[entry] } # or  puts entry.to_human }
+   end
+
+   # Now we actually request historical data for the symbols we're interested in. TWS will
+   # respond with a HistoricalData message, which will be processed by the code above.
+   # We request any defined Data-Type (IB::DATA_TYPES in lib/ib/constants.rb   )
+   
+   IB::Gateway.current.advisor.contracts.each do | contract |
+     # first: verify the contracts. Only if the attributes yield a valid IB::Contract perform the 
+     # query for historical data
+     IB::DATA_TYPES.values.each_with_index do | what_to_show, index |
+     IB::Gateway.current.send_message IB::Messages::Outgoing::RequestHistoricalData.new(
+       :request_id => contract.con_id*10+index,
+       :contract => contract,
+       :end_date_time => Time.now.to_ib,
+       :duration => '3 D', #    ?
+       :bar_size => '1 hour', #  IB::BAR_SIZES.key(:hour)?
+       :what_to_show => what_to_show,
+       :use_rth => 1,
+       :format_date => 1)
+   end #  each-loop
   end
-
-  # Now we actually request historical data for the symbols we're interested in. TWS will
-  # respond with a HistoricalData message, which will be processed by the code above.
-  IB::Gateway.current.advisor.contracts.each do | contract |
-    # first: verify the contracts. Only if the attributes yield a valid IB::Contract perform the 
-    # query for historical data
-    contract.update_contract  do | msg |
-
-    IB::Gateway.current.send_message IB::Messages::Outgoing::RequestHistoricalData.new(
-      :request_id => msg.contract.con_id,
-      :contract => msg.contract,
-      :end_date_time => Time.now.to_ib,
-      :duration => '3 D', #    ?
-      :bar_size => '1 hour', #  IB::BAR_SIZES.key(:hour)?
-      :what_to_show => :trades,
-      :use_rth => 1,
-      :format_date => 1)
-  end # update_contract
-  end #  each-loop
 
   # IB does not send any indication when all historic data is done being delivered.
   # So we need to interrupt manually when our request is answered.
