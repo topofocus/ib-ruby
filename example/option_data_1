@@ -26,9 +26,9 @@ if ( ib = IB::Gateway.tws).present?
 # For each verified contract a hash-entry is created which will be later subject to a market-data-subscription
 
   options = [IB::Option.new( symbol: 'RRD', strike: 20, expiry: EXPIRY, right: :put),
-	     IB::Option.new( symbol: 'Z',   strike: 50, expiry: EXPIRY, right: :put, exchange: 'SMART'),
-	     IB::Option.new( symbol: 'SPY', strike: 75, expiry: EXPIRY, right: :call, exchange: 'SMART'), # all ( 4 or 5 weekly) call- contracts in the EXPIRY-Month
-	     IB::Option.new( symbol: 'SPY', strike: 100, expiry: '2016',  exchange: 'SMART'),   # all available contracts (put+call) in 2016 
+	     IB::Option.new( symbol: 'Z',   strike: 50, expiry: EXPIRY, right: :put),
+	     IB::Option.new( symbol: 'SPY', strike: 75, expiry: EXPIRY, right: :call), # all ( 4 or 5 weekly) call- contracts in the EXPIRY-Month
+	     IB::Option.new( symbol: 'SPY', strike: 100, expiry: '2016' ),   # all available contracts (put+call) in 2016 
 	     IB::Option.new( symbol: 'DPW', expiry: EXPIRY, currency:'EUR', right: :put, exchange: 'DTB' ), # load the option-chain
 	     IB::Option.new( symbol: 'BEI', strike: 80, expiry: EXPIRY, currency:'EUR', right: :put, exchange: 'DTB' )
   ]

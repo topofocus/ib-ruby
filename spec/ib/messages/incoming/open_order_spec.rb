@@ -9,40 +9,40 @@ shared_examples_for 'OpenOrder message' do
   its(:local_id) { should be_an Integer }
   its(:status) { should =~ /Submit/ }
   its(:to_human) { should =~
-      /<OpenOrder: <Contract: WFC stock NYSE USD> <Order: LMT DAY buy 100 9.13 .*Submit.* #\d+\/\d+ from 1111/ }
+      /<OpenOrder: <Stock: WFC USD> <Order: LMT DAY buy 100 @ 9.13 .*Submit.* #\d+\/\d+ from 1111/ }
 
   it 'has proper contract accessor' do
     c = subject.contract
-    c.should be_an IB::Contract
-    c.symbol.should == 'WFC'
-    c.exchange.should == 'NYSE'
+    expect( c ).to be_an IB::Contract
+    expect( c.symbol).to eq 'WFC'
+    expect( c.exchange).to eq 'NYSE'
   end
 
   it 'has proper order accessor' do
     o = subject.order
-    o.should be_an IB::Order
-    o.client_id.should == 1111
-    o.parent_id.should == 0
-    o.local_id.should be_an Integer
-    o.perm_id.should be_an Integer
-    o.order_type.should == :limit
-    o.tif.should == :day
-    o.status.should =~ /Submit/
+    expect( o ).to be_an IB::Order
+    expect( o.client_id ).to eq 1111
+    expect( o.parent_id ).to be_zero
+    expect( o.local_id ).to be_an Integer
+    expect( o.perm_id ).to  be_an Integer
+    expect( o.order_type).to eq :limit
+    expect( o.tif).to eq :day
+    expect( o.status).to match /Submit/
   end
 
   it 'has proper order_state accessor' do
     os = subject.order_state
-    os.local_id.should be_an Integer
-    os.perm_id.should be_an Integer
-    os.client_id.should == 1111
-    os.parent_id.should == 0
-    os.status.should =~ /Submit/
+     expect( os.local_id).to be_an Integer
+     expect( os.perm_id).to be_an Integer
+     expect( os.client_id).to eq 1111
+     expect( os.parent_id).to be_zero
+     expect( os.status).to match /Submit/
   end
 
   it 'has class accessors as well' do
-    subject.class.message_id.should == 5
-    subject.class.version.should == 30 # Message versions supported
-    subject.class.message_type.should == :OpenOrder
+    expect( subject.class.message_id).to eq 5
+    expect( subject.class.version).to eq 30 # Message versions supported
+    expect( subject.class.message_type).to eq :OpenOrder
   end
 
 end
@@ -80,14 +80,17 @@ describe IB::Messages::Incoming::OpenOrder do
     it_behaves_like 'OpenOrder message'
   end
 
-  context 'received from IB' do
+  context 'received from IB', :pending => "order statement unclear" do
     before(:all) do
-      verify_account
-      @ib = IB::Connection.new OPTS[:connection].merge(:logger => mock_logger)
-      @ib.wait_for :NextValidId
-      place_order IB::Symbols::Stocks[:wfc]
+    gw = IB::Gateway.current.presence || IB::Gateway.new( OPTS[:connection].merge(logger: mock_logger, client_id:1056, connect:true, serial_array: false, host: 'localhost'))
+    gw.connect if !gw.tws.connected?
+    if gw.advisor.test_environment?
+      @ib=gw.tws
+
+      place_order IB::Stock[:wfc]
       @ib.wait_for :OpenOrder, 3
       @ib.received?(:OpenOrder).should be_true
+    end
     end
 
     after(:all) { close_connection } # implicitly cancels order

@@ -11,11 +11,12 @@ require 'message_helper'
 describe "Request Market Data Type", :connected => true, :integration => true do
 
   before(:all) do
-    verify_account
-    @ib = IB::Connection.new OPTS[:connection].merge(:logger => mock_logger)
+    gw = IB::Gateway.current.presence || IB::Gateway.new( OPTS[:connection].merge(logger: mock_logger, client_id:1056, connect:true, serial_array: false, host: 'beta'))
+    gw.connect if !gw.tws.connected?
+    @ib=gw.tws
   end
 
-  after(:all) { close_connection }
+  after(:all) { IB::Gateway.current.disconnect }
 
   context "switching to real_time streaming after-hours" do
     before(:all) do
@@ -23,7 +24,7 @@ describe "Request Market Data Type", :connected => true, :integration => true do
       @ib.wait_for 2 # sec
     end
 
-    after(:all) { clean_connection }
+#    after(:all) { clean_connection }
 
     it 'just works' do
     end
@@ -35,7 +36,7 @@ describe "Request Market Data Type", :connected => true, :integration => true do
       @ib.wait_for 2 # sec
     end
 
-    after(:all) { clean_connection }
+#    after(:all) { clean_connection }
 
     it 'just works' do
     end

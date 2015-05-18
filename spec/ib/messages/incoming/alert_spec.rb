@@ -37,12 +37,11 @@ describe IB::Messages::Incoming do
   context 'Message received from IB', :connected => true do
 
     before(:all) do
-      @ib = IB::Connection.new OPTS[:connection].merge(:logger => mock_logger, client_id:1290)
-      @ib.wait_for :Alert
-      pending 'No Alert received upon connect!' unless @ib.received? :Alert
+    gw = IB::Gateway.current.presence || IB::Gateway.new( OPTS[:connection].merge(logger: mock_logger, client_id:1056, connect:true, serial_array: false, host: 'localhost'))
+    @ib = gw.tws
     end
 
-    after(:all) { close_connection }
+    after(:all) { IB::Gateway.current.disconnect }
 
     subject { @ib.received[:Alert].first }
 

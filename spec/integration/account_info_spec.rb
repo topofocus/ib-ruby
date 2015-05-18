@@ -7,7 +7,7 @@ shared_examples_for 'a valid AccountValue' do
   its(:key){ is_expected.to be_a Symbol }
 end
 
-describe "Request Account Data", :connected => true, :integration => true do
+describe "Require Account Data", :connected => true, :integration => true do
 
   before(:all) do 
     gw = IB::Gateway.current.presence || IB::Gateway.new( OPTS[:connection].merge(logger: mock_logger, client_id:1056, connect:true, serial_array: false))

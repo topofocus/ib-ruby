@@ -40,6 +40,7 @@ module IB
         (trades ? "trades #{trades}" : "") + " vol #{volume} gaps #{has_gaps}>"
     end
 
+
     alias to_s to_human
   end # class Bar
 end # module IB

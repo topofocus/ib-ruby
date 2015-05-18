@@ -9,7 +9,6 @@ describe "Build Contract-Database", :connected => true, :integration => true do
   before(:all) do
     verify_account
     #IB::Contract.all{|x| x.destroy }
-    raise "works only in db-backed mode " unless IB.db_backed?
   end
 
  # after(:all) { IB::Contract.all{|x| x.destroy }}#close_connection }
@@ -23,20 +22,20 @@ describe "Build Contract-Database", :connected => true, :integration => true do
 
   it{ expect( list_of_symbols ).to have_exactly(8).items }
   context "BuildDB" do
-  let!( :number_of_datasets ){ list_of_symbols.size }
+    let!( :number_of_datasets ){ list_of_symbols.size }
 
 
-  let( :db ){ list_of_symbols.map{|s| FactoryGirl.create( :default_stock, symbol:s).update_contract } }
-  let( :agu) { FactoryGirl.create( :default_stock, symbol:list_of_symbols.first )}
-  let( :agu_canada) { FactoryGirl.create :default_stock, symbol:'AGU', currency:'CAD' }
-  it{ expect( db ).to have_exactly(number_of_datasets).items }
-  it{ expect( IB::Contract.count).to eq number_of_datasets }
-  it "update contract_data " do
-	  IB::Contract.all.each do |y| 
-		  expect{ y.update_contract }.not_to change{ y }
-	  end
-  end
-#  it "try to save duplicate Dataset" do
+    let( :db ){ list_of_symbols.map{|s| is= IB::Stock.new(symbol:s); is.verify; is } }
+    let( :agu) { IB::Stock.new( symbol:list_of_symbols.first )}
+    let( :agu_canada) { IB::Stock.new symbol:'AGU', currency:'CAD' }
+    it{ expect( db ).to have_exactly(number_of_datasets).items }
+    it{ expect( IB::Contract.count).to eq number_of_datasets }
+    it "update contract_data ", focus:true do
+      db.each do |y| 
+	expect{ y.verify }.not_to change{ y }
+      end
+    end
+    #  it "try to save duplicate Dataset" do
 #	  expect{ agu.read_contract_from_tws }.to raise_error ActiveRecord::RecordNotUnique
 #	  # important: ensure that invalid datasets are destroyed immediately 
 #	  agu.destroy

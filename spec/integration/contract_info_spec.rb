@@ -6,7 +6,7 @@ describe "Request Contract Info", :connected => true, :integration => true do
 
  after(:all) { close_connection }
 
-  context "Request Stock data" do
+  context "Request Stock data - the manual way" do
 
     before(:all) do
       @contract = IB::Stock.new :symbol => 'AAPL'
@@ -35,7 +35,7 @@ describe "Request Contract Info", :connected => true, :integration => true do
         contract = msg.contract
         detail = msg.contract_detail
 
-       expect( contract.symbol).to  eq 'AAPL'
+      expect( contract.symbol).to  eq 'AAPL'
       expect( contract.local_symbol).to  match /AAPL|APC/
       expect( contract.con_id).to  be_an Integer
       expect( contract.expiry).to  eq ''
@@ -57,7 +57,7 @@ describe "Request Contract Info", :connected => true, :integration => true do
     end
   end # Stock
 
-  context "Request Option contract data" do
+  context "Request Option contract data via verify" do
     before(:all) do
      @contract= IB::Option.new( symbol:'F', strike:15, right: :put, expiry:'201509' ) 
      @contract.verify
@@ -99,29 +99,21 @@ describe "Request Contract Info", :connected => true, :integration => true do
   context "Request Forex contract data" do
 
     before(:all) do
-      @contract = IB::Contract.new :symbol => 'EUR', # EURUSD pair
-                                   :currency => "USD",
-                                   :exchange => "IDEALPRO",
-                                   :sec_type => :forex
-      @ib.send_message :RequestContractData, :id => 135, :contract => @contract
-      @ib.wait_for :ContractDataEnd, 3 # sec
+      @contract = IB::Forex.new( symbol:'EUR') 
+      @contract.verify
     end
 
     after(:all) { clean_connection } # Clear logs and message collector
 
-    subject { @ib.received[:ContractData].first }
+    subject { @contract }
+    it { is_expected.to be_a IB::Forex }
+    it { is_expected.to be_valid }
 
-    it { @ib.received[:ContractData].should have_exactly(1).contract_data }
-    it { @ib.received[:ContractDataEnd].should have_exactly(1).contract_data_end }
 
-    it 'receives Contract Data for requested contract' do
-      subject.request_id.should == 135
-      subject.contract.should be_valid
-    end
 
     it 'receives Contract Data with extended fields' do
-	    contract = subject.contract
-	    detail = subject.contract_detail
+	    contract = @contract
+	    detail = contract.contract_detail
 
 	    expect( contract.symbol).to  eq 'EUR'
 	    expect( contract.local_symbol).to  eq 'EUR.USD'
@@ -144,7 +136,7 @@ describe "Request Contract Info", :connected => true, :integration => true do
     end
   end # Request Forex data
 
-  context "Request Futures contract data" do
+  context "Request Futures contract datai – the manual way" do
 
     before(:all) do
       @contract = IB::Symbols::Futures[:ym] # Mini Dow Jones Industrial

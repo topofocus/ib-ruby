@@ -179,7 +179,6 @@ s --> <IB::Stock:0x007f3de81a4398
 	ib = gw.tws
 	self.option_detail ||=  IB::OptionDetail.new 
 
-#	flag= { tick_option: false, close_price: false, ask_price: false, bid_price: false }
 	sub= ib.subscribe(:TickPrice, :TickSize, :TickOption, :TickString) do |msg|
 
 	  if msg.ticker_id == con_id
@@ -191,14 +190,12 @@ s --> <IB::Stock:0x007f3de81a4398
 		attributes_to_transfer.each{|a| option_detail.update_attribute a,   msg.data[a] }
 		option_detail.update_attribute :updated_at, Time.now  # perform validations
 		option_detail.save  # perform validations
-#		flag[:tick_option] = true
 
 	      end
 	    when IB::Messages::Incoming::TickPrice
 	      option_detail.update_attribute msg.type.to_sym, msg.price
 	      option_detail.update_attribute :updated_at, Time.now  # perform validations
 	      option_detail.save  # perform validations
-#	      flag[ msg.type.to_sym ] = true
 
 	    end  # case
 	  end # branch
