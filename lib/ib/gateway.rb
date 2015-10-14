@@ -30,7 +30,7 @@ IB::Connection.new  serial_array: false, (...)
 =end
 
 class Gateway
-  require 'active_support'
+ require 'active_support'
 
  include LogDev   # provides default_logger
  include AccountInfos  # provides Handling of Account-Data provided by the tws
@@ -49,11 +49,7 @@ If only one Account is transmitted,  User and Advisor are identical.
 (returns an empty array if the array is not initialized, eg not connected)
 =end
   def active_accounts
-    if IB.db_backed?
-     advisor.present? ?  advisor.users : []
-    else
       @accounts.size > 1 ? @accounts[1..-1] : @accounts[0..0] 
-    end
   end
 =begin
 ForSelectAccount provides  an Account-Object-Environment 
@@ -380,8 +376,10 @@ class Array
       part_2 = find_all{ |x| x.send( relation ) == item.send( relation ) }
       int_array <<  part_2 unless part_2.empty?
     end
-	       
-    int_array.intercept || self.push( item ) 
+    # reduce performs a logical "&" between the array-elements
+    # we are only interested in the first entry
+    r= int_array.reduce( :& )
+    r.present? ? r.first : self.push( item ) 
   end
   def update_or_create item, *condition, &b
     member = first_or_create( item, *condition, &b) 

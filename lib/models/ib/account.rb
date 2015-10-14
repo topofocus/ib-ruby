@@ -71,6 +71,12 @@ class Account < IB::Model
       end
     end
   end
+=begin
+returns the last update date of any account-value
+=end
+  def last_update
+     account_values.max{|a,b| a.updated_at <=> b.updated_at}.updated_at
+  end
 
 =begin
 Account#LocateOrder

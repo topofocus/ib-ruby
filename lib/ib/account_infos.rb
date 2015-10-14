@@ -9,7 +9,7 @@ module AccountInfos
 
       when IB::Messages::Incoming::AccountValue
 	  for_selected_account( msg.account_name ) do | account |
-	    #puts "#{account.account} => AccountValue "
+	   # debugging:  puts "#{account.account} => AccountValue "
 	    account.account_values.update_or_create msg.account_value, :currency, :key
 	  end
 
@@ -44,7 +44,7 @@ an Array of account_id and IB::Account-Objects.
     a = if accounts == :all
       active_accounts
     else
-      accounts.is_a?( Array )? accounts : [accounts]
+      [accounts].flatten
     end
     a.each do | ac |
 	account = if ac.is_a? IB::Account
@@ -52,6 +52,7 @@ an Array of account_id and IB::Account-Objects.
 		  else
 		    active_accounts.find{|x| x.account == ac } 
 		  end
+	logger.info{ "#{account.account} :: Requesting AccountData " }
 	send_message :RequestAccountData, subscribe: true, account_code: account.account
 	sleep 1
     end

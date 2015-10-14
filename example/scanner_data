@@ -1,61 +1,115 @@
 #!/usr/bin/env ruby
 #
 # This script setups a scan request and retreives the results.
+# From the button up:
+# First (noticed at the bottom of file)  we define the Scanner-parameter and send this to the tws.
+# The response is treated by the former defined subscription-method.
+# By default, we add the contracts to Gateway#Advisor#Contracts and unsubscribe to the scanner.
+# The TWS response to the unsubsription-event by sending an Alert_162.
+# After successfully unsubsribing we print the results 
+#
 
-require 'rubygems'
 require 'bundler/setup'
 $LOAD_PATH.unshift File.expand_path(File.dirname(__FILE__) + '/../lib')
+require 'yaml'
 require 'ib-ruby'
 
 
 ## does not work on demo-accounts
 TWS= 'beta:7496' # or 'localhost'  
 # Connect to IB TWS.
-ib = IB::Gateway.new :client_id => 1112, connect:true , host:TWS#, :port => 7496 # TWS
+ib = IB::Gateway.new :client_id => 1112, connect:true , host:TWS #, :port => 7496 # TWS
+ib.logger.level= 3  # set to 0 to print all messages
 
+# define an ID to identify the Reques
+ID = 43
 
+# 
+module IB
+    def Alert.alert_162 m
+      if m.error_id == ID
+	# :message=>"Historical Market Data Service error message:API scanner subscription cancelled: 43"
+	puts m.message.split(':')[1]
 
-
+	puts "-"*50
+	puts "RESULTS:"
+	puts IB::Gateway.current.advisor.contracts.map( &:to_human ).join("\n")
+	puts "That's it folks"
+	Kernel.exit
+      end
+  end
+end
 # Subscribe to ScannerData incoming events.  The code passed in the block
 # will be executed when a message of that type is received, with the received
-# message as its argument. In this case, we just print out the data.
+# message as its argument. In this case, we store the contract-data in advisor#contracts
 #
 ib.tws.subscribe(IB::Messages::Incoming::ScannerData) do |msg|
-   puts "ID: #{msg.request_id} : #{msg.count} items:"
-  msg.results.each { |entry| puts "  #{entry}" }
+   puts "ID: #{msg.request_id} : #{msg.count} items"
+  msg.results.each do | e |
+    IB::Gateway.current.advisor.contracts.update_or_create( e[:contract], :con_id )
+  end
+  ib.send_message(IB::Messages::Outgoing::CancelScannerSubscription.new( id: msg.request_id ))
 end
 
-id = 42
 # Now we actually request scanner data for the type of scan we are interested.
-# Some scan types can be found here:  http://www.interactivebrokers.com/php/apiUsersGuide/apiguide/tables/available_market_scanners.htm
+# Some scan types can be found in the API-documentattion  https://www.interactivebrokers.com/en/software/api/api.htm
+# under the keyword »Available Market Scanners«
+# updated documentation:
+# https://www.interactivebrokers.com/en/software/tws/usersguidebook/technicalanalytics/market_scanner_types.htm
+#mess = IB::Messages::Outgoing::RequestScannerSubscription.new(
+#                    :request_id => id,
+#                    :number_of_rows => 20,
+#                    :instrument => "STK",
+#                    :location_code => 'STK.US.MAJOR',
+#                    :scan_code  => 'TOP_PERC_GAIN',
+#                    :above_price => 4.0,
+#                    :below_price => Float::MAX,
+#                    :above_volume => 5000,
+#                    :market_cap_above => 100000000,
+#                    :market_cap_below =>  Float::MAX,
+#                    :moody_rating_above => "",
+#                    :moody_rating_below => "",
+#                    :sp_rating_above => "",
+#                    :sp_rating_below => "",
+#                    :maturity_date_above => "",
+#                    :maturity_date_below => "",
+#                    :coupon_rate_above => Float::MAX,
+#                    :coupon_rate_below => Float::MAX,
+#                    :exclude_convertible => "",
+#                    :average_option_volume_above => "", # ?
+#                    :scanner_setting_pairs => "Annual,true",
+#                    :stock_type_filter => "Stock"
+#                    )
+#                   
+puts "\n"+'-'*70
+puts "Simple MarketScanner: US-Major-Stocks with highest Option-Open-Interests"
+puts '-'*70
 mess = IB::Messages::Outgoing::RequestScannerSubscription.new(
-                    :request_id => id,
-                    :number_of_rows => 20,
+                    :request_id => ID,
+                    :number_of_rows => "",
                     :instrument => "STK",
                     :location_code => 'STK.US.MAJOR',
-                    :scan_code  => 'TOP_PERC_GAIN',
-                    :above_price => 4.0,
-                    :below_price => Float::MAX,
-                    :above_volume => 5000,
-                    :market_cap_above => 100000000,
-                    :market_cap_below =>  Float::MAX,
+                    :scan_code  => 'OPT_OPEN_INTEREST_MOST_ACTIVE', # 'MARKET STATISTICS',
+                    :above_price => "",
+                    :below_price => "",
+                    :above_volume => "",
+                    :market_cap_above => "",
+                    :market_cap_below =>  "",
                     :moody_rating_above => "",
                     :moody_rating_below => "",
                     :sp_rating_above => "",
                     :sp_rating_below => "",
                     :maturity_date_above => "",
                     :maturity_date_below => "",
-                    :coupon_rate_above => Float::MAX,
-                    :coupon_rate_below => Float::MAX,
+                    :coupon_rate_above => "",
+                    :coupon_rate_below => "",
                     :exclude_convertible => "",
-                    :average_option_volume_above => "", # ?
-                    :scanner_setting_pairs => "Annual,true",
-                    :stock_type_filter => "Stock"
+                    :average_option_volume_above => "10000", # ?
+                    :scanner_setting_pairs => "",
+                    :stock_type_filter => ""
                     )
                     
 ib.send_message( mess )   
 
 # IB does not send any indication when all  data is done being delivered.
-# So we need to interrupt manually when our request is answered.
-puts "\n******** Press <Enter> to exit... *********\n\n"
 STDIN.gets

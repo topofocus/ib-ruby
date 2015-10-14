@@ -86,9 +86,9 @@ if ( ib= IB::Gateway.tws).present?
   # IB does not send any indication when all historic data is done being delivered.
   # So we need to interrupt manually when our request is answered.
   #puts "\n******** Press <Enter> to exit... *********\n\n"
-  #STDIN.gets
+ STDIN.gets
   # or
-  sleep(0.2) while responded.length < gw.advisor.contracts.length
+ # sleep(0.2) while responded.length <= gw.advisor.contracts.length
   gw.disconnect
 
 else
