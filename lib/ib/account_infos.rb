@@ -60,7 +60,9 @@ an Array of account_id and IB::Account-Objects.
 
 
   def all_contracts
+    aa = []
     for_active_accounts{|a| a.contracts.each{|y| aa.update_or_create y, :con_id }}
+    aa
   end
 
 end # module
