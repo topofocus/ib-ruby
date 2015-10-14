@@ -60,7 +60,7 @@ an Array of account_id and IB::Account-Objects.
 
 
   def all_contracts
-    for_active_accounts{|a| a.contracts}.flatten.uniq
+    for_active_accounts{|a| a.contracts.each{|y| aa.update_or_create y, :con_id }
   end
 
 end # module
