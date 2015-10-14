@@ -22,13 +22,13 @@ module AccountInfos
 
       when IB::Messages::Incoming::PortfolioValue
 	  logger.progname = 'Gateway#account_infos'
-	  for_selected_account( msg.account_name ) do | account |
-	    #puts "#{account.account} => PortfolioValue "
-	    account.portfolio_values.update_or_create( msg.portfolio_value ){ :contract }
-	    account.contracts.update_or_create msg.contract, :con_id
+
+
+	  for_selected_account( msg.account_name ) do | ac |
+	    ac.contracts.update_or_create  msg.contract
+	    ac.portfolio_values.update_or_create( msg.portfolio_value ){ :contract }
 	  end
       end # case
-#      ActiveRecord::Base.connection.close if IB.db_backed?
     end # do block
 
 
@@ -54,10 +54,13 @@ an Array of account_id and IB::Account-Objects.
 		  end
 	logger.info{ "#{account.account} :: Requesting AccountData " }
 	send_message :RequestAccountData, subscribe: true, account_code: account.account
-	sleep 1
+	sleep 0.2
     end
+  end
 
 
+  def all_contracts
+    for_active_accounts{|a| a.contracts}.flatten.uniq
   end
 
 end # module
