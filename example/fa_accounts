@@ -8,7 +8,7 @@ $LOAD_PATH.unshift File.expand_path(File.dirname(__FILE__) + '/../lib')
 require 'ib-ruby'
 
 # First, connect to IB TWS.
-ib = IB::Connection.new :client_id => 1112 #, :port => 7496 # TWS
+ib = IB::Connection.new :client_id => 1112 , :port => 7496 # TWS
 
 # Subscribe to TWS alerts/errors and FA/managed account info
 ib.subscribe(:Alert, :ManagedAccounts, :ReceiveFA) { |msg| puts msg.to_human }

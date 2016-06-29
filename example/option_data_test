@@ -9,7 +9,7 @@ require 'ib-ruby'
 require 'yaml'
 
 ## Adjust !!
-EXPIRY= '201606' # valid for contracts with monthly option executions
+EXPIRY= '201506' # valid for contracts with monthly option executions
 
 
 # First, connect to IB TWS. Arbitrary :client_id is used to identify the script
@@ -28,8 +28,8 @@ if ( ib = IB::Gateway.tws).present?
   options = [IB::Option.new( symbol: 'RRD', strike: 20, expiry: EXPIRY, right: :put),
 	     IB::Option.new( symbol: 'Z',   strike: 50, expiry: EXPIRY, right: :put, exchange: 'SMART'),
 	     IB::Option.new( symbol: 'SPY', strike: 75, expiry: EXPIRY, right: :call, exchange: 'SMART'), # all ( 4 or 5 weekly) call- contracts in the EXPIRY-Month
-	     IB::Option.new( symbol: 'SPY', strike: 100, expiry: '2016',  exchange: 'SMART'),   # all available contracts (put+call) in 2016 
-	     IB::Option.new( symbol: 'DPW', expiry: EXPIRY, currency:'EUR', right: :put, exchange: 'DTB' ), # load the option-chain
+#	     IB::Option.new( symbol: 'SPY', strike: 100, expiry: '2016',  exchange: 'SMART'),   # all available contracts (put+call) in 2016 
+#	     IB::Option.new( symbol: 'DPW', expiry: EXPIRY, currency:'EUR', right: :put, exchange: 'DTB' ), # load the option-chain
 	     IB::Option.new( symbol: 'BEI', strike: 80, expiry: EXPIRY, currency:'EUR', right: :put, exchange: 'DTB' )
   ]
 
@@ -57,16 +57,17 @@ if ( ib = IB::Gateway.tws).present?
   #
 
   ib.subscribe(:TickPrice, :TickSize, :TickOption, :TickString) do |msg|
-     print  "#{msg.created_at.strftime("%d.%m.(%X)")}: #{market[msg.ticker_id].local_symbol} \t"
      case msg
-          when IB::Messages::Incoming::TickOption
-	    unless msg.implied_volatility.nil?
-	      print_tickoption[msg]
-	    else
-	      puts ""
-	    end
-	  else
+         # when IB::Messages::Incoming::TickOption
+#	    unless msg.implied_volatility.nil?
+#	      print_tickoption[msg]
+	  #  else
+#	      puts ""
+	  #  end
+          when IB::Messages::Incoming::TickSize
+     print  "#{msg.created_at.strftime("%d.%m.(%X)")}: #{market[msg.ticker_id].local_symbol} \t"
 	    puts msg.to_human
+#	  end
      end
   end
 

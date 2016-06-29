@@ -62,8 +62,8 @@ It returns an Array of the return-values of the block
     active_accounts.map{|y| for_selected_account y.account,  &b }
   end
   def for_selected_account account_id
-    sa =  @accounts.detect{|x| x.account == account_id }
     @account_lock.synchronize do
+      sa =  @accounts.detect{|x| x.account == account_id }
       yield sa if block_given? && sa.is_a?( IB::Account )
     end
   end
@@ -343,8 +343,7 @@ Its always active. If the connection is interrupted and
     if tws.present?
       tws.disconnect 
       #	@imap_accounts.each{|account,imap| imap.stop }
-      if IB.db_backed?
-      	Account.update_all :connected => false
+      if IB.db_backed?  Account.update_all :connected => false
       else
 #	@accounts.each{|y| y.update_attribute :connected,  false }
 	@accounts = []
@@ -367,14 +366,16 @@ class Array
   # returns the item (in case of first) or the hole array (in case of create)
   def first_or_create item, *condition, &b
     int_array = if condition.empty? 
-	       [ find_all{ |x| x == item } ] if !block_given?
+	       block_given? ? [] :  [ find_all{ |x| x == item } ]
 	     else
 	       condition.map{ |c| find_all{|x| x[ c ] == item[ c ] }}
-	     end || []
+	     end 
     if block_given?
       relation = yield
+      if relation.is_a? Symbol
       part_2 = find_all{ |x| x.send( relation ) == item.send( relation ) }
       int_array <<  part_2 unless part_2.empty?
+      end
     end
     # reduce performs a logical "&" between the array-elements
     # we are only interested in the first entry

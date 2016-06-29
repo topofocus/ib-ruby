@@ -179,20 +179,41 @@ s --> <IB::Stock:0x007f3de81a4398
 	ib = gw.tws
 	self.option_detail ||=  IB::OptionDetail.new 
 
-	sub= ib.subscribe(:TickPrice, :TickSize, :TickOption, :TickString) do |msg|
+	sub= ib.subscribe(:TickPrice, :TickSize, :TickOption, :TickString, :TickGeneric) do |msg|
 
 	  if msg.ticker_id == con_id
 	    case msg
 	    when IB::Messages::Incoming::TickOption
-	      unless msg.implied_volatility.nil?
+#	      unless msg.implied_volatility.nil?
 		#             print_tickoption[msg]
-		attributes_to_transfer = msg.data.reject{|x,_| [:version, :ticker_id,:tick_type].include? x}.keys
+		puts "TicOption"
+		puts msg.data[:tick_type]
+		## tick-type:  10: BidOptionComputation
+		##	      11 : AskOptionComputation
+		##	      12 : LastOptionComputation
+		##	      13 : OptionModelComputation
+		if  msg.data[:tick_type].to_i == 13
+		  attributes_to_transfer = msg.data.reject{|x,_| [:version, :ticker_id,:tick_type].include? x}.keys
 		attributes_to_transfer.each{|a| option_detail.update_attribute a,   msg.data[a] }
+		elsif msg.data[:under_price].to_f >0
+		  option_detail.update_attribute :under_price, msg.data[:under_price]
+		end
 		option_detail.update_attribute :updated_at, Time.now  # perform validations
 		option_detail.save  # perform validations
+#	    else
+#	      puts msg.data.inspect
+#	      puts  self.to_human
 
+#	      end
+	    when IB::Messages::Incoming::TickGeneric
+	      ## we are interested in msg-id 23+24 (Option_Historic_Volatility, Option_implied_Volatility)
+#+	      puts "TiclGeneric"
+#	      puts msg.data.inspect
+	      if msg.data[:tick_type] == 49
+		puts "49 found"
 	      end
 	    when IB::Messages::Incoming::TickPrice
+#	      puts "TicPirce  #{msg.inspect} "
 	      option_detail.update_attribute msg.type.to_sym, msg.price
 	      option_detail.update_attribute :updated_at, Time.now  # perform validations
 	      option_detail.save  # perform validations
@@ -207,8 +228,8 @@ s --> <IB::Stock:0x007f3de81a4398
 
 	if wait_for_data
 	  # wait for flag to fill
-	  u=0; while u<100  do   # wait max 50 sec
-	    break if ( !snapshot && option_detail.complete? ) ||( snapshot &&  option_detail.greeks? )
+	  u=0; while u<1000  do   # wait max 50 sec
+	    break if   option_detail.complete?  ||( snapshot &&  option_detail.greeks? )
 	    u+=1; sleep 0.05 
 	  end
 	  ib.send_message( :CancelMarketData, id: con_id)
