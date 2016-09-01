@@ -27,6 +27,6 @@ end
 #gem 'jdbc-sqlite3', '>= 3.7.2', :platforms => :jruby
 gem 'activemodel', "~>4.2"
 gem 'activesupport', "~>4.2"
-#gem 'active-orient', "~>0.4"
+gem 'active-orient', "~>0.4", :path => '/home/topo/activeorient'
 #gem 'mysql2'
 #gem "backports"

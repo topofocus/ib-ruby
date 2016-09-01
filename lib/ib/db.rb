@@ -13,7 +13,7 @@ module IB
     def self.connect config
 
       # Use ib prefix for all DB tables
-      ActiveRecord::Base.table_name_prefix = "ib_"
+#      ActiveRecord::Base.table_name_prefix = "ib_"
 
       # Get rid of nasty conversion issues
       ActiveRecord::Base.default_timezone = :utc

@@ -88,7 +88,7 @@ The Advisor is always the first account
 		  logger: default_logger
     host, port = (host+':'+port.to_s).split(':') 
     self.logger = logger
-    logger.info { '-' * 20 +' initialize ' + '-' * 20 }
+    logger.info { '-' * 20 + ' initialize ' + '-' * 20 }
     logger.tap{|l| l.progname =  'Gateway#Initialize' }
     @connection_parameter = { received: serial_array, port: port, host: host, connect: false, logger: logger, client_id: client_id }
     @account_lock = Mutex.new

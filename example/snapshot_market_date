@@ -43,6 +43,10 @@ ib.subscribe( :TickPrice,:TickSize,:TickString,:TickGeneric, :TickEFP,:TickSnaps
   contract = gw.advisor.contracts.detect{|y| y.con_id == msg.ticker_id }
   print  contract.local_symbol + "\t"+ msg.to_human + "\n"
   case msg
+  when IB::Messages::Incoming::TickGenric
+
+  when IB::Messages::Incoming::TickPrice
+         ## implied Vola; historic vola
   when IB::Messages::Incoming::TickPrice
     if prices[msg.ticker_id].nil?
       prices[msg.ticker_id] = {msg.type => msg.price }
