@@ -1,9 +1,9 @@
-require 'models/ib/contract_detail'
+#require 'models/ib/contract_detail'
 require 'models/ib/underlying'
 require 'ib/tws_reader'
 
 module IB
-  class Contract < IB::Model
+  class Contract #< IB::Model
     include BaseProperties
     include TWS_Reader
    
@@ -278,11 +278,11 @@ module IB
 
   ### Now let's deal with Contract subclasses
 
-  require 'models/ib/option'
-  require 'models/ib/future'
-  require 'models/ib/forex'
-  require 'models/ib/stock'
-  require 'models/ib/bag'
+  load 'models/ib/option.rb'
+  load 'models/ib/future.rb'
+  load 'models/ib/forex.rb'
+  load 'models/ib/stock.rb'
+  load 'models/ib/bag.rb'
 
   class Contract
     # Contract subclasses representing specialized security types.

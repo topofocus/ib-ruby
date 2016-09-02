@@ -1,6 +1,6 @@
-require 'models/ib/contract'
+#require 'models/ib/contract'
 module IB
-  class Future < Contract
+  class Future  < Contract
     validates_format_of :sec_type, :with => /\Afuture\z/,
       :message => "should be a Future"
     def default_attributes

@@ -6,29 +6,40 @@ require 'rubygems'
 require 'bundler/setup'
 require 'yaml'
 $LOAD_PATH.unshift File.expand_path(File.dirname(__FILE__) + '/../lib')
-require 'ib-ruby'
+require 'ib/ord'
 # Connect to IB TWS.
 # It is safe to connect to a production-machine. 
 #                            change host to ip of the computer, where a tws (or gateway)
 #                            with marketdata-subscriptions is running
+logger =  Logger.new '/dev/stdout'
+logger.level= Logger::WARN
+logger.formatter = proc do |severity, datetime, progname, msg| 
+     "#{datetime.strftime("(%X)")}#{"%5s" % severity}->#{progname}:..:#{msg}\n" 
+end
+ActiveOrient::Base.logger =  logger
+ActiveOrient::OrientDB.logger =  logger
+require 'ib-ruby'
 gw = IB::Gateway.new  connect: true ,  client_id: 1289 ,  host: 'beta:7496', # or 'localhost'
-		      logger: Logger.new("/dev/null")  # we are not interested in logging messages
+		      logger: logger
+
 
 if ( ib= IB::Gateway.tws).present? 
 
   # Definition of what we want data for.  
-  EXPIRY =  '201506'
-  [ IB::Stock.new( symbol:'T' ),
-    IB::Future.new( symbol:'ES', exchange: 'GLOBEX' , expiry:EXPIRY, :multiplier => 50),
-    IB::Forex.new( :symbol => 'AUD', :currency  =>'USD')
-  ].each do |x| 
-    x.verify do |contract| 
-      gw.advisor.contracts.update_or_create  contract, :con_id
-      puts "Added verified Contract #{contract.to_human} to Advisor#Contracts"
-    end
-  end
+  EXPIRY =  '201612'
+  the_contracts =[ IB::Stock.new( symbol:'T' ),
+		  IB::Future.new( symbol:'ES', exchange: 'GLOBEX' , expiry:EXPIRY, :multiplier => 50),
+		  IB::Forex.new( :symbol => 'AUD', :currency  =>'USD')
+		].map do |x| 
+		  x.verify do |contract| 
+		    IB::Contract.upsert where: {con_id: contract.con_id}, set: contract.attributes 
+#		    contract.update
+		    puts "Added verified Contract #{contract.to_human} to IB:Contracts"
+		  end
+		  x
+		end
   print_ohlc = ->(obj) do
-    print obj.time  + " >>  "+
+    print obj.time.strftime( "%d.%m.%Y %H:%M")  + " >>  "+
       "%8.3f \t" % obj.open +
       "%8.3f \t" % obj.high + 
       "%8.3f \t" % obj.low  +
@@ -54,13 +65,17 @@ if ( ib= IB::Gateway.tws).present?
   # Note that we have to look the ticker id of each incoming message
   # up in local memory to figure out what it's for.
   ib.subscribe( IB::Messages::Incoming::HistoricalData ) do |msg|
-    contract = gw.advisor.contracts.detect{|y| y.con_id == msg.request_id }
+    contract = IB::Contract.where( con_id: msg.request_id ).first
     case msg
     when IB::Messages::Incoming::HistoricalData
       puts "-"*100
       print "%8s" % contract.local_symbol + ": #{msg.count} items"
       print_ohlc_title[]
-      msg.results.each { |entry|  print_ohlc[entry] }
+      msg.results.each do |entry|  
+	entry.time = DateTime.parse(entry.time)
+	print_ohlc[entry] 
+	IB::Bar.upsert where: { time: entry.time, contract: contract }, set: entry.attributes
+      end
       responded[msg.request_id] =  1
     else 
       puts msg.to_human
@@ -70,7 +85,7 @@ if ( ib= IB::Gateway.tws).present?
 
   # Now we actually request historical data for the symbols we're interested in. TWS will
   # respond with a HistoricalDa#ta message, which will be processed by the code above.
-  gw.advisor.contracts.each do | contract |
+  the_contracts.each do | contract |
 
     IB::Gateway.current.send_message IB::Messages::Outgoing::RequestHistoricalData.new(
       :request_id => contract.con_id,

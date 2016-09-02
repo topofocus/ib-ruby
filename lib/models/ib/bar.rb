@@ -1,7 +1,7 @@
 module IB
   # This is a single data point delivered by HistoricData or RealTimeBar messages.
   # Instantiate with a Hash of attributes, to be auto-set via initialize in Model.
-  class Bar < IB::Model
+  class Bar #< IB::Model
     include BaseProperties
 
     has_one :contract # The bar represents timeseries info for this Contract

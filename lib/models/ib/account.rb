@@ -1,5 +1,5 @@
 module IB
-class Account < IB::Model
+class Account #< IB::Model
     include BaseProperties
   #  attr_accessible :name, :account, :connected
 

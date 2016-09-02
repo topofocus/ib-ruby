@@ -48,8 +48,8 @@ module IB
     ### Default attributes support
 
     def default_attributes
-      {:created_at => Time.now,
-       :updated_at => Time.now,
+      {:created_at => DateTime.now,
+       :updated_at => DateTime.now,
        }
     end
 

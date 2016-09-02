@@ -2,6 +2,10 @@ module IB
   def self.db_backed?
     !!defined?(IB::DB)
   end
+  
+  def self.orient?
+    !!defined?(IB::ORD)
+  end
  
   def self.rails?
     !!defined?(Rails) && Rails.respond_to?('env')
@@ -20,4 +24,11 @@ if IB.rails?
   require 'ib/engine'
 else
   require 'ib/requires'
+end
+
+if IB.orient?
+  require 'ib/orient_gateway'
+  DB =  IB::ORD.connect
+else
+  require 'ib/gateway'
 end

@@ -1,6 +1,6 @@
-require 'models/ib/contract'
+#require 'models/ib/contract'
 module IB
-  class Stock < Contract
+  class Stock < IB::Contract
     validates_format_of :sec_type, :with => /\Astock\z/,
       :message => "should be a Stock"
     def default_attributes

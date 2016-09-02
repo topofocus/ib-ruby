@@ -1,11 +1,11 @@
-require 'models/ib/contract'
+#require 'models/ib/contract'
 
 module IB
 
   # "BAG" is not really a contract, but a combination (combo) of securities.
   # AKA basket or bag of securities. Individual securities in combo are represented
   # by ComboLeg objects.
-  class Bag < Contract
+  class Bag  < Contract
     # General Notes:
     # 1. :exchange for the leg definition must match that of the combination order.
     # The exception is for a STK legs, which must specify the SMART exchange.

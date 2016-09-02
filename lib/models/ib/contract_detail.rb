@@ -1,7 +1,7 @@
 module IB
 
   # Additional Contract properties (volatile, therefore extracted)
-  class ContractDetail < IB::Model
+  class ContractDetail #< IB::Model
     include BaseProperties
 
     # All fields Strings, unless specified otherwise:

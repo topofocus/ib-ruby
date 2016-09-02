@@ -5,6 +5,7 @@
 require 'bundler/setup'
 $LOAD_PATH.unshift File.expand_path(File.dirname(__FILE__) + '/../lib')
 require 'yaml'
+require 'ib/ord'
 require 'ib-ruby'
 
 # Definition of what we want market data for.  We have to keep track of what ticker id

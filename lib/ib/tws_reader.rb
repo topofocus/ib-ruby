@@ -198,7 +198,7 @@ s --> <IB::Stock:0x007f3de81a4398
 		elsif msg.data[:under_price].to_f >0
 		  option_detail.update_attribute :under_price, msg.data[:under_price]
 		end
-		option_detail.update_attribute :updated_at, Time.now  # perform validations
+		option_detail.update_attribute :updated_at, DateTime.now  # perform validations
 		option_detail.save  # perform validations
 #	    else
 #	      puts msg.data.inspect
@@ -215,7 +215,7 @@ s --> <IB::Stock:0x007f3de81a4398
 	    when IB::Messages::Incoming::TickPrice
 #	      puts "TicPirce  #{msg.inspect} "
 	      option_detail.update_attribute msg.type.to_sym, msg.price
-	      option_detail.update_attribute :updated_at, Time.now  # perform validations
+	      option_detail.update_attribute :updated_at, DateTime.now  # perform validations
 	      option_detail.save  # perform validations
 
 	    end  # case

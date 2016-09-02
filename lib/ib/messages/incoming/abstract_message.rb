@@ -23,7 +23,7 @@ module IB
 
         # Create incoming message from a given source (IB Socket or data Hash)
         def initialize source
-          @created_at = Time.now
+          @created_at = DateTime.now
           if source.is_a?(Hash)  # Source is a @data Hash
             @data = source
           else # Source is a Socket

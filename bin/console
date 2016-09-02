@@ -1,0 +1,41 @@
+#!/usr/bin/env ruby
+## loads the active-orient environment 
+## and starts an interactive shell
+## Parameter:  production (p)
+##	       development (d)  [default]
+##	       test (t)
+require 'logger'
+require 'bundler/setup'
+require 'active-orient'
+logger =  Logger.new '/dev/stdout'
+logger.level = Logger::WARN
+logger.formatter = proc do |severity, datetime, progname, msg|
+     "#{datetime.strftime("%d.%m.(%X)")}#{"%5s" % severity}->#{progname}:..:#{msg}\n"
+end
+ActiveOrient::Base.logger =  logger
+ActiveOrient::OrientDB.logger =  logger
+require 'ib/ord'
+require 'ib-ruby'
+require 'yaml'
+
+puts '-'* 50
+ns= case ActiveOrient::Model.namespace.to_s 
+  when "Object"
+    "No Prefix, just ClassName#CamelCase"
+    else
+     ActiveOrient::Model.namespace.to_s + "::{ClassName.CamelCase}"
+    end
+puts "Namespace for model-classes : #{ns}"
+puts '-'* 50
+puts "Allocated Classes (Hierarchy) ( Modelclasses are Camelized ):"
+
+puts DB.class_hierarchy.to_yaml
+
+puts "\"DB\" points to the database-instance"
+
+puts "To connect to the TWS use » IB::Gateway.new  connect: true «"
+puts '-'* 50
+
+require 'irb'
+ARGV.clear
+IRB.start(__FILE__)
