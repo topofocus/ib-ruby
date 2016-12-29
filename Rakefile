@@ -2,7 +2,7 @@
 #  require 'rake'
 #rescue LoadError
 #  require 'rubygems'
-#  gem 'rake', '~> 0.8.3.1'
+#  gem 'rake', '>= 0.8.3.1'
 #  require 'rake'
 #end
 
