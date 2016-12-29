@@ -1,7 +1,7 @@
 # -*- encoding: utf-8 -*-
 
 Gem::Specification.new do |gem|
-  gem.required_ruby_version = '~> 2.2'
+  gem.required_ruby_version = '~> 2.4'
   gem.name = "ib-ruby"
   gem.version = File.open('VERSION').read.strip
   gem.summary = "Ruby Implementation of the Interactive Brokers TWS API"
@@ -23,22 +23,10 @@ Gem::Specification.new do |gem|
   gem.require_paths = ['lib']
 
   # Dependencies
-  gem.add_dependency 'bundler', '~> 1.7'
-  gem.add_dependency 'activesupport', '~> 4.2'
-  #gem.add_dependency 'activerecord-jdbcsqlite3-adapter', '>= 1.2.2'
-  #gem.add_dependency 'jdbc-sqlite3', '>= 3.7.2'
+  gem.add_dependency 'bundler', '~> 1.13'
+  gem.add_dependency 'activesupport', '~> 5.0'
   gem.add_dependency 'xml-simple', '~> 1.1'
-#  gem.add_dependency 'standalone_migrations'
-  #gem.add_dependency 'pg', '>= 0.12.1'
+  gem.add_dependency 'activemodel-serializers-xml', '~>1.0'
+  gem.add_dependency 'rspec', '~> 3.5'
 
-#  gem.add_development_dependency 'database_cleaner'
-#  gem.add_development_dependency 'rspec', '~> 3.1'
-#  gem.add_development_dependency 'my_scripts'
-#  gem.add_development_dependency 'rails', '~> 3.2.3'
-#  gem.add_development_dependency 'rspec-rails', '~> 2.10.1'
-#  gem.add_development_dependency 'capybara'
-#  gem.add_development_dependency 'combustion'
-#  gem.add_development_dependency 'pry'
-#  gem.add_development_dependency 'pry-doc'
-#  gem.add_development_dependency 'pry-rails'
 end

@@ -1,5 +1,5 @@
 module IB
-
+require 'activemodel-serializers-xml'
   # Base class for tableless IB data Models, extends ActiveModel API
   class Base
     extend ActiveModel::Naming
