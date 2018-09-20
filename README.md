@@ -1,5 +1,5 @@
 # Dont use this libray anymore. It's outdated and keept for historical reasons (for now)
-# Changes and enhancements are placed into the master-branch if IB-Ruby  
+# Changes and enhancements are placed into the master-branch of IB-Ruby  
 
 
 Ruby Implementation of the Interactive Brokers Trader Workstation (TWS) API v.965-967.
