@@ -1,5 +1,5 @@
 # Dont use this libray anymore. It's outdated and keept for historical reasons (for now)
-# Changes and enhencemnts are put into the master-branch if IB-Ruby  
+# Changes and enhancements are put into the master-branch if IB-Ruby  
 
 # ib-ruby
 
